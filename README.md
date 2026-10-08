@@ -4,6 +4,8 @@
 
 Patch Google Maps with [Morphe Desktop](https://github.com/MorpheApp/morphe-desktop) and use it with [MicroG-RE 7.2.1](https://github.com/MorpheApp/MicroG-RE/releases/tag/7.2.1). This is the only supported provider for the current patch.
 
+Our Maps sign-in and location fixes were merged upstream in [MicroG-RE PR #272](https://github.com/MorpheApp/MicroG-RE/pull/272) and are included in 7.2.1. We now use the official provider; the separate BYD fork is no longer maintained.
+
 This repository provides `.mpp` patch bundles. Supply a clean Google Maps APK to patch.
 
 ## Patches list
