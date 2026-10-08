@@ -87,13 +87,11 @@ Use the official MorpheApp release listed below. Older patch releases retain the
 
 1. Install the patched APK from [Google TTS for MicroG-RE](https://github.com/fangkampanat/google-tts-microg#download-and-install) separately from Maps.
 2. On BYD, turn OFF **Speech Recognition and Synthesis from Google** in **Disable Autostart** to allow automatic startup.
-3. On BYD, add Google TTS to the Battery Doze whitelist via ADB:
+3. On BYD, add Google TTS to the Doze whitelist:
 
    ```bash
    adb shell dumpsys deviceidle whitelist +com.google.android.tts
    ```
-
-   This is a workaround to try for occasional voice fallback; effectiveness is not yet confirmed.
 
 4. Open **Google TTS** and download Thai and English (US) voices.
 5. In Maps' navigation voice settings, select **Default (language)** for spoken street names.
