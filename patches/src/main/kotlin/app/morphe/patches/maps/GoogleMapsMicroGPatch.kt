@@ -97,7 +97,13 @@ val googleMapsMicroGPatch = bytecodePatch(
         patchAvailabilityChecks()
         suppressMisleadingPlayServicesUpdateNotification()
         patchBydNavigationAudio()
-        patchNavigationTts()
+        // GigiMaps: this is a car head-unit speech tweak that fails on newer Maps builds.
+        // All its checks run before it changes anything, so skipping it is safe on a phone.
+        try {
+            patchNavigationTts()
+        } catch (e: PatchException) {
+            logger.warning("Skipping navigation TTS tweak: ${e.message?.take(200)}")
+        }
         injectExtensionContext()
         injectGmsCoreCheck()
     }
