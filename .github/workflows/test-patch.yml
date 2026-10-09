@@ -26,7 +26,7 @@ jobs:
           set -o pipefail
           {
             curl -fsSL -o apkeep https://github.com/EFForg/apkeep/releases/download/0.17.0/apkeep-x86_64-unknown-linux-gnu && chmod +x apkeep
-            ./apkeep -a com.google.android.apps.maps -d apk-pure dl
+            mkdir -p dl && ./apkeep -a com.google.android.apps.maps -d apk-pure dl
             curl -fsSL -o morphe.jar https://github.com/MorpheApp/morphe-desktop/releases/download/v1.18.1/morphe-desktop-1.18.1-all.jar
             gh release download --pattern 'patches-*.mpp' --dir mpp
             ls -la dl mpp
