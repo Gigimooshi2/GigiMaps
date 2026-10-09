@@ -1,0 +1,82 @@
+name: Build & release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['patches-bundle.json', '.github/workflows/decompile.yml', '.github/scripts-gigi/**']
+  workflow_dispatch:
+
+concurrency:
+  group: build-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute version
+        id: ver
+        run: |
+          base=$(grep -E '^version *=' gradle.properties | sed 's/.*= *//' | sed 's/-.*//')
+          ver="${base}-gigi.$(date -u +%Y%m%d%H%M)"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          sed -i "s/^version *=.*/version = $ver/" gradle.properties
+
+      - name: Build patches bundle
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew buildAndroid --no-daemon --stacktrace 2>&1 | tee build.log
+          ls -la patches/build/libs/
+
+      - name: Upload build log on failure
+        if: failure()
+        env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+        run: |
+          tag="buildlog-${{ github.run_number }}"
+          gh release create "$tag" build.log --prerelease --title "$tag" --notes "Failed build log" || true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          mpp=$(ls patches/build/libs/patches-*.mpp | grep -v -e sources -e javadoc | head -1)
+          cp "$mpp" "patches-${VER}.mpp"
+          gh release create "v${VER}" "patches-${VER}.mpp" build.log \
+            --title "GigiMaps ${VER}" \
+            --notes "Maps MicroG patches (fangkampanat/gmaps-patches) + Kav bus route button. Built from ${GITHUB_SHA}." \
+            --target "${GITHUB_SHA}" --latest
+
+      - name: Update patches-bundle.json
+        env: { VER: '${{ steps.ver.outputs.version }}' }
+        run: |
+          git checkout -- gradle.properties
+          cat > patches-bundle.json <<JSON
+          {
+            "created_at": "$(date -u +%Y-%m-%dT%H:%M:%S)",
+            "description": "GigiMaps ${VER}: Maps for MicroG + Kav bus route button.",
+            "download_url": "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VER}/patches-${VER}.mpp",
+            "signature_download_url": "",
+            "version": "${VER}"
+          }
+          JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add patches-bundle.json
+          git commit -m "chore: bundle ${VER} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

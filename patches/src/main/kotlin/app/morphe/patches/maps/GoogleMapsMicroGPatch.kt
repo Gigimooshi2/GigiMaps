@@ -57,7 +57,7 @@ private const val LOCATION_SERVICE_CLASS =
 private const val LOCATION_SERVICE_ACTION =
     "com.google.android.location.internal.GoogleLocationManagerService.START"
 
-private val compatibility = Compatibility(
+internal val compatibility = Compatibility(
     name = "Google Maps Morphe",
     packageName = ORIGINAL_PACKAGE_NAME,
     apkFileType = ApkFileType.APK_REQUIRED,
@@ -698,7 +698,7 @@ private fun app.morphe.patcher.patch.BytecodePatchContext.patchExtensionRuntime(
 // PR #7 (Harvey843): resolve obfuscated classes through stable entry points.
 // Search the nearest declaring superclass, reject ambiguous or non-instance hooks,
 // and never continue into Android framework classes.
-private fun app.morphe.patcher.patch.BytecodePatchContext.findSuperclassHook(
+internal fun app.morphe.patcher.patch.BytecodePatchContext.findSuperclassHook(
     childClass: String,
     label: String,
     predicate: (Method) -> Boolean,
