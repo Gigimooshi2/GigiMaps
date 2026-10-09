@@ -1,0 +1,41 @@
+name: Test-patch stock Maps
+
+# Applies the latest GigiMaps bundle to a stock Maps APK to check the hooks still match.
+# Only the log is published; the patched APK is not (it's Google's app).
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Build & release"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: Patch
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL -o apkeep https://github.com/EFForg/apkeep/releases/download/0.17.0/apkeep-x86_64-unknown-linux-gnu && chmod +x apkeep
+            ./apkeep -a com.google.android.apps.maps -d apk-pure dl
+            curl -fsSL -o morphe.jar https://github.com/MorpheApp/morphe-desktop/releases/download/v1.18.1/morphe-desktop-1.18.1-all.jar
+            gh release download --pattern 'patches-*.mpp' --dir mpp
+            ls -la dl mpp
+            unzip -p dl/*.apk AndroidManifest.xml >/dev/null
+            java -jar morphe.jar patch -p mpp/patches-*.mpp -o patched.apk dl/*.apk
+            ls -la patched.apk
+          } 2>&1 | tee test-patch.log
+      - name: Publish log
+        if: always()
+        run: |
+          tag="testpatch-${{ github.run_number }}"
+          gh release create "$tag" test-patch.log --prerelease --title "$tag" --notes "Test-patch log" || true

@@ -3,7 +3,7 @@ name: Build & release
 on:
   push:
     branches: [main]
-    paths-ignore: ['patches-bundle.json', '.github/workflows/decompile.yml', '.github/scripts-gigi/**']
+    paths-ignore: ['patches-bundle.json', '.github/workflows/decompile.yml', '.github/workflows/test-patch.yml', '.github/scripts-gigi/**']
   workflow_dispatch:
 
 concurrency:
