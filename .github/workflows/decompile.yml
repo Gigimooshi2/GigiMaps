@@ -1,0 +1,41 @@
+name: Decompile Google Maps (research)
+
+# Pulls a stock Maps APK, decompiles it, and publishes the output ENCRYPTED to a
+# release. The repo is public, and decompiled Google code must not be readable
+# here; only the holder of the private key matching gigi/decompile-pub.pem can open it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Maps version (blank = latest on APKPure)
+        default: "26.39.06.984891338"
+
+permissions:
+  contents: write
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PKG: com.google.android.apps.maps
+      VER: ${{ github.event.inputs.version }}
+      TAG: decompile-${{ github.run_number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+
+      - name: Release for this run
+        run: gh release create "$TAG" --prerelease --title "$TAG" --notes "Encrypted Maps decompile ${VER:-latest}. Research only."
+
+      - name: Run
+        run: |
+          set -o pipefail
+          bash -x .github/scripts-gigi/decompile.sh 2>&1 | tee run.log
+
+      - name: Upload log
+        if: always()
+        run: gh release upload "$TAG" run.log --clobber || true
