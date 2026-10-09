@@ -23,13 +23,14 @@ echo "BASE=$BASE"; ls -la "$BASE"
 unzip -p "$BASE" AndroidManifest.xml > /dev/null
 java -jar apktool.jar d -f -o out/apktool "$BASE" || java -jar apktool.jar d -f --no-res -o out/apktool "$BASE"
 JAVA_OPTS="-Xmx12g" jadx/bin/jadx -j 4 --show-bad-code --no-imports -d out/jadx "$BASE" || echo "jadx finished with errors (normal on big apps)"
+grep -A3 versionInfo out/apktool/apktool.yml || true
 du -sh out/*
 
 # pack + encrypt (aes key wrapped with the repo's public key)
 tar -C out -cf - . | xz -T0 -6 > maps.tar.xz
 openssl rand -out k.bin 32
 openssl enc -aes-256-cbc -pbkdf2 -salt -pass file:k.bin -in maps.tar.xz -out maps.tar.xz.enc
-openssl pkeyutl -encrypt -pubin -inkey "$GITHUB_WORKSPACE/gigi/decompile-pub.pem" -in k.bin -out key.enc
+openssl pkeyutl -encrypt -pubin -inkey "$GITHUB_WORKSPACE/gigi/decompile-pub.key.txt" -in k.bin -out key.enc
 rm -f k.bin maps.tar.xz
 split -b 1900M -d maps.tar.xz.enc maps.part.
 ls -la maps.part.* key.enc
