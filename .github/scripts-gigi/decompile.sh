@@ -8,7 +8,11 @@ curl -fsSL -o jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/j
 curl -fsSL -o apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar
 
 # APK: exact version first, then latest
-if [ -n "${VER:-}" ] && ./apkeep -a "$PKG@$VER" -d apk-pure dl; then :; else ./apkeep -a "$PKG" -d apk-pure dl; fi
+./apkeep -l -a "$PKG" -d apk-pure 2>&1 | head -40 || true
+got() { ls dl/* >/dev/null 2>&1; }
+[ -n "${VER:-}" ] && { ./apkeep -a "$PKG@$VER" -d apk-pure dl || true; }
+got || { echo "exact version not available, trying latest"; ./apkeep -a "$PKG" -d apk-pure dl || true; }
+got || { echo "APKPure gave nothing"; exit 1; }
 ls -la dl
 F=$(ls dl/* | head -1)
 case "$F" in
